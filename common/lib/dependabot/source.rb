@@ -39,13 +39,32 @@ module Dependabot
     attr_accessor :provider, :repo, :directory, :branch, :commit,
                   :hostname, :api_endpoint
 
-    def self.from_url(url_string)
-      return unless url_string&.match?(SOURCE_REGEX)
+    def self.from_url(url_string, provider: nil, hostname: nil)
+      case provider
+      when 'github'
+        github_source = %r{
+          (?:#{hostname})[/:]
+          (?<repo>[\w.-]+/(?:(?!\.git|\.\s)[\w.-])+)
+          (?:(?:/tree|/blob)/(?<branch>[^/]+)/(?<directory>.*)[\#|/])?
+        }x
+      else
+        github_source = GITHUB_SOURCE
+      end
 
-      captures = url_string.match(SOURCE_REGEX).named_captures
+      source_regex =
+        /
+          (?:#{github_source})|
+          (?:#{GITLAB_SOURCE})|
+          (?:#{BITBUCKET_SOURCE})|
+          (?:#{AZURE_SOURCE})
+        /x
+
+      return unless url_string&.match?(source_regex)
+
+      captures = url_string.match(source_regex).named_captures
 
       new(
-        provider: captures.fetch("provider"),
+        provider: provider || captures.fetch("provider"),
         repo: captures.fetch("repo"),
         directory: captures.fetch("directory"),
         branch: captures.fetch("branch")

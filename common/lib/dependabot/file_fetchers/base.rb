@@ -178,7 +178,7 @@ module Dependabot
       def update_linked_paths(repo, path, commit, github_response)
         case github_response.type
         when "submodule"
-          sub_source = Source.from_url(github_response.submodule_git_url)
+          sub_source = Source.from_url(github_response.submodule_git_url, provider: 'github', hostname: source.hostname)
           return unless sub_source
 
           @linked_paths[path] = {
